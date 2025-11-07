@@ -23,7 +23,6 @@ typedef enum dimension { KDIM = 0, JDIM, IDIM, NDIMS } Dimension;
 enum layer { HALO = 0, BULK };
 enum op { MAX = 0, SUM };
 
-
 typedef struct {
     int rank;
     int size;
@@ -37,30 +36,33 @@ typedef struct {
     int imaxLocal, jmaxLocal, kmaxLocal;
 } Comm;
 
-extern void commInit(Comm* c, int argc, char** argv);
-extern void commPartition(Comm* c, int kmax, int jmax, int imax);
-extern void commFinalize(Comm* comm);
-extern void commPrintConfig(Comm*);
-extern void commExchange(Comm*, double*);
-extern void commShift(Comm* c, double* f, double* g, double* h);
-extern void commReduction(double* v, int op);
-extern int commIsBoundary(Comm* c, Direction direction);
-extern void commGetOffsets(Comm* c, int offsets[], int kmax, int jmax, int imax);
-extern void commFreeCommunicator(Comm* comm);
+extern void commInit(Comm *c, int argc, char **argv);
+extern void commPartition(Comm *c, int kmax, int jmax, int imax);
+extern void commFinalize(Comm *comm);
+extern void commPrintConfig(Comm *);
+extern void commExchange(Comm *, double *);
+extern void commShift(Comm *c, double *f, double *g, double *h);
+extern void commReduction(double *v, int op);
+extern int commIsBoundary(Comm *c, Direction direction);
+extern void commGetOffsets(Comm *c, int offsets[], int kmax, int jmax, int imax);
+extern void commFreeCommunicator(Comm *comm);
 extern void commUpdateDatatypes(
-    Comm* oldcomm, Comm* newcomm, int imaxLocal, int jmaxLocal, int kmaxLocal);
-extern void commCollectResult(Comm* c,
-    double* ug,
-    double* vg,
-    double* wg,
-    double* pg,
-    double* u,
-    double* v,
-    double* w,
-    double* p,
+    Comm *oldcomm, Comm *newcomm, int imaxLocal, int jmaxLocal, int kmaxLocal);
+extern void commCollectResult(Comm *c,
+    double *ug,
+    double *vg,
+    double *wg,
+    double *pg,
+    double *u,
+    double *v,
+    double *w,
+    double *p,
     int kmax,
     int jmax,
     int imax);
 
-static inline int commIsMaster(Comm* c) { return c->rank == 0; }
+static inline int commIsMaster(Comm *c)
+{
+    return c->rank == 0;
+}
 #endif // __COMM_H_

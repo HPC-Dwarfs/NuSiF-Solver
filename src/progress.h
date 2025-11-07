@@ -12,6 +12,6 @@
 extern void initProgress(double);
 extern void printProgress(double);
 extern void stopProgress(void);
-extern FILE* initResidualWriter(void);
-extern void writeResidual(FILE*, double, double);
+extern FILE *initResidualWriter(void);
+extern void writeResidual(FILE *, double, double);
 #endif

@@ -49,9 +49,9 @@ void stopProgress()
     fflush(stdout);
 }
 
-FILE* initResidualWriter()
+FILE *initResidualWriter()
 {
-    FILE* fp;
+    FILE *fp;
     fp = fopen("residual.dat", "w");
 
     if (fp == NULL) {
@@ -62,4 +62,7 @@ FILE* initResidualWriter()
     return fp;
 }
 
-void writeResidual(FILE* fp, double ts, double res) { fprintf(fp, "%f, %f\n", ts, res); }
+void writeResidual(FILE *fp, double ts, double res)
+{
+    fprintf(fp, "%f, %f\n", ts, res);
+}

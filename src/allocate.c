@@ -11,10 +11,10 @@
 
 #include "allocate.h"
 
-void* allocate(size_t alignment, size_t bytesize)
+void *allocate(size_t alignment, size_t bytesize)
 {
     int errorCode;
-    void* ptr;
+    void *ptr;
 
     errorCode = posix_memalign(&ptr, alignment, bytesize);
 

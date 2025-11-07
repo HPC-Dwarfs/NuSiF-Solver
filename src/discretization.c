@@ -31,7 +31,7 @@
 #define RHS(i, j, k)                                                                     \
     rhs[(k) * (imaxLocal + 2) * (jmaxLocal + 2) + (j) * (imaxLocal + 2) + (i)]
 
-static void printConfig(Discretization* s)
+static void printConfig(Discretization *s)
 {
     if (commIsMaster(&s->comm)) {
         printf("Parameters for #%s#\n", s->problem);
@@ -49,14 +49,10 @@ static void printConfig(Discretization* s)
             s->grid.xlength,
             s->grid.ylength,
             s->grid.zlength);
-        printf("\tCells (x, y, z): %d, %d, %d\n",
-            s->grid.imax,
-            s->grid.jmax,
-            s->grid.kmax);
-        printf("\tCell size (dx, dy, dz): %f, %f, %f\n",
-            s->grid.dx,
-            s->grid.dy,
-            s->grid.dz);
+        printf(
+            "\tCells (x, y, z): %d, %d, %d\n", s->grid.imax, s->grid.jmax, s->grid.kmax);
+        printf(
+            "\tCell size (dx, dy, dz): %f, %f, %f\n", s->grid.dx, s->grid.dy, s->grid.dz);
         printf("Timestep parameters:\n");
         printf("\tDefault stepsize: %.2f, Final time %.2f\n", s->dt, s->te);
         printf("\tdt bound: %.6f\n", s->dtBound);
@@ -70,15 +66,15 @@ static void printConfig(Discretization* s)
     commPrintConfig(&s->comm);
 }
 
-void initDiscretization(Discretization* s, Parameter* params)
+void initDiscretization(Discretization *s, Parameter *params)
 {
-    s->problem  = params->name;
-    s->bcLeft   = params->bcLeft;
-    s->bcRight  = params->bcRight;
-    s->bcBottom = params->bcBottom;
-    s->bcTop    = params->bcTop;
-    s->bcFront  = params->bcFront;
-    s->bcBack   = params->bcBack;
+    s->problem      = params->name;
+    s->bcLeft       = params->bcLeft;
+    s->bcRight      = params->bcRight;
+    s->bcBottom     = params->bcBottom;
+    s->bcTop        = params->bcTop;
+    s->bcFront      = params->bcFront;
+    s->bcBack       = params->bcBack;
 
     s->grid.imax    = params->imax;
     s->grid.jmax    = params->jmax;
@@ -90,17 +86,17 @@ void initDiscretization(Discretization* s, Parameter* params)
     s->grid.dy      = params->ylength / params->jmax;
     s->grid.dz      = params->zlength / params->kmax;
 
-    s->eps     = params->eps;
-    s->omega   = params->omg;
-    s->itermax = params->itermax;
-    s->re      = params->re;
-    s->gx      = params->gx;
-    s->gy      = params->gy;
-    s->gz      = params->gz;
-    s->dt      = params->dt;
-    s->te      = params->te;
-    s->tau     = params->tau;
-    s->gamma   = params->gamma;
+    s->eps          = params->eps;
+    s->omega        = params->omg;
+    s->itermax      = params->itermax;
+    s->re           = params->re;
+    s->gx           = params->gx;
+    s->gy           = params->gy;
+    s->gz           = params->gz;
+    s->dt           = params->dt;
+    s->te           = params->te;
+    s->tau          = params->tau;
+    s->gamma        = params->gamma;
 
     /* allocate arrays */
     int imaxLocal = s->comm.imaxLocal;
@@ -108,14 +104,14 @@ void initDiscretization(Discretization* s, Parameter* params)
     int kmaxLocal = s->comm.kmaxLocal;
     size_t size   = (imaxLocal + 2) * (jmaxLocal + 2) * (kmaxLocal + 2);
 
-    s->u   = allocate(64, size * sizeof(double));
-    s->v   = allocate(64, size * sizeof(double));
-    s->w   = allocate(64, size * sizeof(double));
-    s->p   = allocate(64, size * sizeof(double));
-    s->rhs = allocate(64, size * sizeof(double));
-    s->f   = allocate(64, size * sizeof(double));
-    s->g   = allocate(64, size * sizeof(double));
-    s->h   = allocate(64, size * sizeof(double));
+    s->u          = allocate(64, size * sizeof(double));
+    s->v          = allocate(64, size * sizeof(double));
+    s->w          = allocate(64, size * sizeof(double));
+    s->p          = allocate(64, size * sizeof(double));
+    s->rhs        = allocate(64, size * sizeof(double));
+    s->f          = allocate(64, size * sizeof(double));
+    s->g          = allocate(64, size * sizeof(double));
+    s->h          = allocate(64, size * sizeof(double));
 
     for (int i = 0; i < size; i++) {
         s->u[i]   = params->u_init;
@@ -128,9 +124,9 @@ void initDiscretization(Discretization* s, Parameter* params)
         s->h[i]   = 0.0;
     }
 
-    double dx = s->grid.dx;
-    double dy = s->grid.dy;
-    double dz = s->grid.dz;
+    double dx        = s->grid.dx;
+    double dy        = s->grid.dy;
+    double dz        = s->grid.dz;
 
     double invSqrSum = 1.0 / (dx * dx) + 1.0 / (dy * dy) + 1.0 / (dz * dz);
     s->dtBound       = 0.5 * s->re * 1.0 / invSqrSum;
@@ -140,15 +136,15 @@ void initDiscretization(Discretization* s, Parameter* params)
 #endif /* VERBOSE */
 }
 
-void setBoundaryConditions(Discretization* s)
+void setBoundaryConditions(Discretization *s)
 {
     int imaxLocal = s->comm.imaxLocal;
     int jmaxLocal = s->comm.jmaxLocal;
     int kmaxLocal = s->comm.kmaxLocal;
 
-    double* u = s->u;
-    double* v = s->v;
-    double* w = s->w;
+    double *u     = s->u;
+    double *v     = s->v;
+    double *w     = s->w;
 
     if (commIsBoundary(&s->comm, TOP)) {
         switch (s->bcTop) {
@@ -355,21 +351,21 @@ void setBoundaryConditions(Discretization* s)
     }
 }
 
-void computeRHS(Discretization* s)
+void computeRHS(Discretization *s)
 {
     int imaxLocal = s->comm.imaxLocal;
     int jmaxLocal = s->comm.jmaxLocal;
     int kmaxLocal = s->comm.kmaxLocal;
 
-    double idx = 1.0 / s->grid.dx;
-    double idy = 1.0 / s->grid.dy;
-    double idz = 1.0 / s->grid.dz;
-    double idt = 1.0 / s->dt;
+    double idx    = 1.0 / s->grid.dx;
+    double idy    = 1.0 / s->grid.dy;
+    double idz    = 1.0 / s->grid.dz;
+    double idt    = 1.0 / s->dt;
 
-    double* rhs = s->rhs;
-    double* f   = s->f;
-    double* g   = s->g;
-    double* h   = s->h;
+    double *rhs   = s->rhs;
+    double *f     = s->f;
+    double *g     = s->g;
+    double *h     = s->h;
 
     commShift(&s->comm, f, g, h);
 
@@ -385,13 +381,13 @@ void computeRHS(Discretization* s)
     }
 }
 
-void setSpecialBoundaryCondition(Discretization* s)
+void setSpecialBoundaryCondition(Discretization *s)
 {
     int imaxLocal = s->comm.imaxLocal;
     int jmaxLocal = s->comm.jmaxLocal;
     int kmaxLocal = s->comm.kmaxLocal;
 
-    double* u = s->u;
+    double *u     = s->u;
 
     if (strcmp(s->problem, "dcavity") == 0) {
         if (commIsBoundary(&s->comm, TOP)) {
@@ -412,10 +408,10 @@ void setSpecialBoundaryCondition(Discretization* s)
     }
 }
 
-static double maxElement(Discretization* s, double* m)
+static double maxElement(Discretization *s, double *m)
 {
-    int size = (s->comm.imaxLocal + 2) * (s->comm.jmaxLocal + 2) *
-               (s->comm.kmaxLocal + 2);
+    int size =
+        (s->comm.imaxLocal + 2) * (s->comm.jmaxLocal + 2) * (s->comm.kmaxLocal + 2);
     double maxval = DBL_MIN;
 
     for (int i = 0; i < size; i++) {
@@ -425,14 +421,14 @@ static double maxElement(Discretization* s, double* m)
     return maxval;
 }
 
-void normalizePressure(Discretization* s)
+void normalizePressure(Discretization *s)
 {
     int imaxLocal = s->comm.imaxLocal;
     int jmaxLocal = s->comm.jmaxLocal;
     int kmaxLocal = s->comm.kmaxLocal;
 
-    double* p   = s->p;
-    double avgP = 0.0;
+    double *p     = s->p;
+    double avgP   = 0.0;
 
     for (int k = 1; k < kmaxLocal + 1; k++) {
         for (int j = 1; j < jmaxLocal + 1; j++) {
@@ -453,12 +449,12 @@ void normalizePressure(Discretization* s)
     }
 }
 
-void computeTimestep(Discretization* s)
+void computeTimestep(Discretization *s)
 {
-    double dt = s->dtBound;
-    double dx = s->grid.dx;
-    double dy = s->grid.dy;
-    double dz = s->grid.dz;
+    double dt   = s->dtBound;
+    double dx   = s->grid.dx;
+    double dy   = s->grid.dy;
+    double dz   = s->grid.dz;
 
     double umax = maxElement(s, s->u);
     double vmax = maxElement(s, s->v);
@@ -477,25 +473,23 @@ void computeTimestep(Discretization* s)
     s->dt = dt * s->tau;
 }
 
-
-
-void computeFG(Discretization* s)
+void computeFG(Discretization *s)
 {
-    int imaxLocal = s->comm.imaxLocal;
-    int jmaxLocal = s->comm.jmaxLocal;
-    int kmaxLocal = s->comm.kmaxLocal;
+    int imaxLocal    = s->comm.imaxLocal;
+    int jmaxLocal    = s->comm.jmaxLocal;
+    int kmaxLocal    = s->comm.kmaxLocal;
 
-    double* u = s->u;
-    double* v = s->v;
-    double* w = s->w;
-    double* f = s->f;
-    double* g = s->g;
-    double* h = s->h;
+    double *u        = s->u;
+    double *v        = s->v;
+    double *w        = s->w;
+    double *f        = s->f;
+    double *g        = s->g;
+    double *h        = s->h;
 
-    double gx = s->gx;
-    double gy = s->gy;
-    double gz = s->gz;
-    double dt = s->dt;
+    double gx        = s->gx;
+    double gy        = s->gy;
+    double gz        = s->gz;
+    double dt        = s->dt;
 
     double gamma     = s->gamma;
     double inverseRe = 1.0 / s->re;
@@ -515,38 +509,38 @@ void computeFG(Discretization* s)
     for (int k = 1; k < kmaxLocal + 1; k++) {
         for (int j = 1; j < jmaxLocal + 1; j++) {
             for (int i = 1; i < imaxLocal + 1; i++) {
-                du2dx = inverseDx * 0.25 *
-                            ((U(i, j, k) + U(i + 1, j, k)) *
-                                    (U(i, j, k) + U(i + 1, j, k)) -
-                                (U(i, j, k) + U(i - 1, j, k)) *
-                                    (U(i, j, k) + U(i - 1, j, k))) +
-                        gamma * inverseDx * 0.25 *
-                            (fabs(U(i, j, k) + U(i + 1, j, k)) *
-                                    (U(i, j, k) - U(i + 1, j, k)) +
-                                fabs(U(i, j, k) + U(i - 1, j, k)) *
-                                    (U(i, j, k) - U(i - 1, j, k)));
+                du2dx =
+                    inverseDx * 0.25 *
+                        ((U(i, j, k) + U(i + 1, j, k)) * (U(i, j, k) + U(i + 1, j, k)) -
+                            (U(i, j, k) + U(i - 1, j, k)) *
+                                (U(i, j, k) + U(i - 1, j, k))) +
+                    gamma * inverseDx * 0.25 *
+                        (fabs(U(i, j, k) + U(i + 1, j, k)) *
+                                (U(i, j, k) - U(i + 1, j, k)) +
+                            fabs(U(i, j, k) + U(i - 1, j, k)) *
+                                (U(i, j, k) - U(i - 1, j, k)));
 
-                duvdy = inverseDy * 0.25 *
-                            ((V(i, j, k) + V(i + 1, j, k)) *
-                                    (U(i, j, k) + U(i, j + 1, k)) -
-                                (V(i, j - 1, k) + V(i + 1, j - 1, k)) *
-                                    (U(i, j, k) + U(i, j - 1, k))) +
-                        gamma * inverseDy * 0.25 *
-                            (fabs(V(i, j, k) + V(i + 1, j, k)) *
-                                    (U(i, j, k) - U(i, j + 1, k)) +
-                                fabs(V(i, j - 1, k) + V(i + 1, j - 1, k)) *
-                                    (U(i, j, k) - U(i, j - 1, k)));
+                duvdy =
+                    inverseDy * 0.25 *
+                        ((V(i, j, k) + V(i + 1, j, k)) * (U(i, j, k) + U(i, j + 1, k)) -
+                            (V(i, j - 1, k) + V(i + 1, j - 1, k)) *
+                                (U(i, j, k) + U(i, j - 1, k))) +
+                    gamma * inverseDy * 0.25 *
+                        (fabs(V(i, j, k) + V(i + 1, j, k)) *
+                                (U(i, j, k) - U(i, j + 1, k)) +
+                            fabs(V(i, j - 1, k) + V(i + 1, j - 1, k)) *
+                                (U(i, j, k) - U(i, j - 1, k)));
 
-                duwdz = inverseDz * 0.25 *
-                            ((W(i, j, k) + W(i + 1, j, k)) *
-                                    (U(i, j, k) + U(i, j, k + 1)) -
-                                (W(i, j, k - 1) + W(i + 1, j, k - 1)) *
-                                    (U(i, j, k) + U(i, j, k - 1))) +
-                        gamma * inverseDz * 0.25 *
-                            (fabs(W(i, j, k) + W(i + 1, j, k)) *
-                                    (U(i, j, k) - U(i, j, k + 1)) +
-                                fabs(W(i, j, k - 1) + W(i + 1, j, k - 1)) *
-                                    (U(i, j, k) - U(i, j, k - 1)));
+                duwdz =
+                    inverseDz * 0.25 *
+                        ((W(i, j, k) + W(i + 1, j, k)) * (U(i, j, k) + U(i, j, k + 1)) -
+                            (W(i, j, k - 1) + W(i + 1, j, k - 1)) *
+                                (U(i, j, k) + U(i, j, k - 1))) +
+                    gamma * inverseDz * 0.25 *
+                        (fabs(W(i, j, k) + W(i + 1, j, k)) *
+                                (U(i, j, k) - U(i, j, k + 1)) +
+                            fabs(W(i, j, k - 1) + W(i + 1, j, k - 1)) *
+                                (U(i, j, k) - U(i, j, k - 1)));
 
                 du2dx2 = inverseDx * inverseDx *
                          (U(i + 1, j, k) - 2.0 * U(i, j, k) + U(i - 1, j, k));
@@ -557,38 +551,38 @@ void computeFG(Discretization* s)
                 F(i, j, k) = U(i, j, k) + dt * (inverseRe * (du2dx2 + du2dy2 + du2dz2) -
                                                    du2dx - duvdy - duwdz + gx);
 
-                duvdx = inverseDx * 0.25 *
-                            ((U(i, j, k) + U(i, j + 1, k)) *
-                                    (V(i, j, k) + V(i + 1, j, k)) -
-                                (U(i - 1, j, k) + U(i - 1, j + 1, k)) *
-                                    (V(i, j, k) + V(i - 1, j, k))) +
-                        gamma * inverseDx * 0.25 *
-                            (fabs(U(i, j, k) + U(i, j + 1, k)) *
-                                    (V(i, j, k) - V(i + 1, j, k)) +
-                                fabs(U(i - 1, j, k) + U(i - 1, j + 1, k)) *
-                                    (V(i, j, k) - V(i - 1, j, k)));
+                duvdx =
+                    inverseDx * 0.25 *
+                        ((U(i, j, k) + U(i, j + 1, k)) * (V(i, j, k) + V(i + 1, j, k)) -
+                            (U(i - 1, j, k) + U(i - 1, j + 1, k)) *
+                                (V(i, j, k) + V(i - 1, j, k))) +
+                    gamma * inverseDx * 0.25 *
+                        (fabs(U(i, j, k) + U(i, j + 1, k)) *
+                                (V(i, j, k) - V(i + 1, j, k)) +
+                            fabs(U(i - 1, j, k) + U(i - 1, j + 1, k)) *
+                                (V(i, j, k) - V(i - 1, j, k)));
 
-                dv2dy = inverseDy * 0.25 *
-                            ((V(i, j, k) + V(i, j + 1, k)) *
-                                    (V(i, j, k) + V(i, j + 1, k)) -
-                                (V(i, j, k) + V(i, j - 1, k)) *
-                                    (V(i, j, k) + V(i, j - 1, k))) +
-                        gamma * inverseDy * 0.25 *
-                            (fabs(V(i, j, k) + V(i, j + 1, k)) *
-                                    (V(i, j, k) - V(i, j + 1, k)) +
-                                fabs(V(i, j, k) + V(i, j - 1, k)) *
-                                    (V(i, j, k) - V(i, j - 1, k)));
+                dv2dy =
+                    inverseDy * 0.25 *
+                        ((V(i, j, k) + V(i, j + 1, k)) * (V(i, j, k) + V(i, j + 1, k)) -
+                            (V(i, j, k) + V(i, j - 1, k)) *
+                                (V(i, j, k) + V(i, j - 1, k))) +
+                    gamma * inverseDy * 0.25 *
+                        (fabs(V(i, j, k) + V(i, j + 1, k)) *
+                                (V(i, j, k) - V(i, j + 1, k)) +
+                            fabs(V(i, j, k) + V(i, j - 1, k)) *
+                                (V(i, j, k) - V(i, j - 1, k)));
 
-                dvwdz = inverseDz * 0.25 *
-                            ((W(i, j, k) + W(i, j + 1, k)) *
-                                    (V(i, j, k) + V(i, j, k + 1)) -
-                                (W(i, j, k - 1) + W(i, j + 1, k - 1)) *
-                                    (V(i, j, k) + V(i, j, k + 1))) +
-                        gamma * inverseDz * 0.25 *
-                            (fabs(W(i, j, k) + W(i, j + 1, k)) *
-                                    (V(i, j, k) - V(i, j, k + 1)) +
-                                fabs(W(i, j, k - 1) + W(i, j + 1, k - 1)) *
-                                    (V(i, j, k) - V(i, j, k + 1)));
+                dvwdz =
+                    inverseDz * 0.25 *
+                        ((W(i, j, k) + W(i, j + 1, k)) * (V(i, j, k) + V(i, j, k + 1)) -
+                            (W(i, j, k - 1) + W(i, j + 1, k - 1)) *
+                                (V(i, j, k) + V(i, j, k + 1))) +
+                    gamma * inverseDz * 0.25 *
+                        (fabs(W(i, j, k) + W(i, j + 1, k)) *
+                                (V(i, j, k) - V(i, j, k + 1)) +
+                            fabs(W(i, j, k - 1) + W(i, j + 1, k - 1)) *
+                                (V(i, j, k) - V(i, j, k + 1)));
 
                 dv2dx2 = inverseDx * inverseDx *
                          (V(i + 1, j, k) - 2.0 * V(i, j, k) + V(i - 1, j, k));
@@ -599,38 +593,38 @@ void computeFG(Discretization* s)
                 G(i, j, k) = V(i, j, k) + dt * (inverseRe * (dv2dx2 + dv2dy2 + dv2dz2) -
                                                    duvdx - dv2dy - dvwdz + gy);
 
-                duwdx = inverseDx * 0.25 *
-                            ((U(i, j, k) + U(i, j, k + 1)) *
-                                    (W(i, j, k) + W(i + 1, j, k)) -
-                                (U(i - 1, j, k) + U(i - 1, j, k + 1)) *
-                                    (W(i, j, k) + W(i - 1, j, k))) +
-                        gamma * inverseDx * 0.25 *
-                            (fabs(U(i, j, k) + U(i, j, k + 1)) *
-                                    (W(i, j, k) - W(i + 1, j, k)) +
-                                fabs(U(i - 1, j, k) + U(i - 1, j, k + 1)) *
-                                    (W(i, j, k) - W(i - 1, j, k)));
+                duwdx =
+                    inverseDx * 0.25 *
+                        ((U(i, j, k) + U(i, j, k + 1)) * (W(i, j, k) + W(i + 1, j, k)) -
+                            (U(i - 1, j, k) + U(i - 1, j, k + 1)) *
+                                (W(i, j, k) + W(i - 1, j, k))) +
+                    gamma * inverseDx * 0.25 *
+                        (fabs(U(i, j, k) + U(i, j, k + 1)) *
+                                (W(i, j, k) - W(i + 1, j, k)) +
+                            fabs(U(i - 1, j, k) + U(i - 1, j, k + 1)) *
+                                (W(i, j, k) - W(i - 1, j, k)));
 
-                dvwdy = inverseDy * 0.25 *
-                            ((V(i, j, k) + V(i, j, k + 1)) *
-                                    (W(i, j, k) + W(i, j + 1, k)) -
-                                (V(i, j - 1, k + 1) + V(i, j - 1, k)) *
-                                    (W(i, j, k) + W(i, j - 1, k))) +
-                        gamma * inverseDy * 0.25 *
-                            (fabs(V(i, j, k) + V(i, j, k + 1)) *
-                                    (W(i, j, k) - W(i, j + 1, k)) +
-                                fabs(V(i, j - 1, k + 1) + V(i, j - 1, k)) *
-                                    (W(i, j, k) - W(i, j - 1, k)));
+                dvwdy =
+                    inverseDy * 0.25 *
+                        ((V(i, j, k) + V(i, j, k + 1)) * (W(i, j, k) + W(i, j + 1, k)) -
+                            (V(i, j - 1, k + 1) + V(i, j - 1, k)) *
+                                (W(i, j, k) + W(i, j - 1, k))) +
+                    gamma * inverseDy * 0.25 *
+                        (fabs(V(i, j, k) + V(i, j, k + 1)) *
+                                (W(i, j, k) - W(i, j + 1, k)) +
+                            fabs(V(i, j - 1, k + 1) + V(i, j - 1, k)) *
+                                (W(i, j, k) - W(i, j - 1, k)));
 
-                dw2dz = inverseDz * 0.25 *
-                            ((W(i, j, k) + W(i, j, k + 1)) *
-                                    (W(i, j, k) + W(i, j, k + 1)) -
-                                (W(i, j, k) + W(i, j, k - 1)) *
-                                    (W(i, j, k) + W(i, j, k - 1))) +
-                        gamma * inverseDz * 0.25 *
-                            (fabs(W(i, j, k) + W(i, j, k + 1)) *
-                                    (W(i, j, k) - W(i, j, k + 1)) +
-                                fabs(W(i, j, k) + W(i, j, k - 1)) *
-                                    (W(i, j, k) - W(i, j, k - 1)));
+                dw2dz =
+                    inverseDz * 0.25 *
+                        ((W(i, j, k) + W(i, j, k + 1)) * (W(i, j, k) + W(i, j, k + 1)) -
+                            (W(i, j, k) + W(i, j, k - 1)) *
+                                (W(i, j, k) + W(i, j, k - 1))) +
+                    gamma * inverseDz * 0.25 *
+                        (fabs(W(i, j, k) + W(i, j, k + 1)) *
+                                (W(i, j, k) - W(i, j, k + 1)) +
+                            fabs(W(i, j, k) + W(i, j, k - 1)) *
+                                (W(i, j, k) - W(i, j, k - 1)));
 
                 dw2dx2 = inverseDx * inverseDx *
                          (W(i + 1, j, k) - 2.0 * W(i, j, k) + W(i - 1, j, k));
@@ -699,19 +693,19 @@ void computeFG(Discretization* s)
     }
 }
 
-void adaptUV(Discretization* s)
+void adaptUV(Discretization *s)
 {
-    int imaxLocal = s->comm.imaxLocal;
-    int jmaxLocal = s->comm.jmaxLocal;
-    int kmaxLocal = s->comm.kmaxLocal;
+    int imaxLocal  = s->comm.imaxLocal;
+    int jmaxLocal  = s->comm.jmaxLocal;
+    int kmaxLocal  = s->comm.kmaxLocal;
 
-    double* p = s->p;
-    double* u = s->u;
-    double* v = s->v;
-    double* w = s->w;
-    double* f = s->f;
-    double* g = s->g;
-    double* h = s->h;
+    double *p      = s->p;
+    double *u      = s->u;
+    double *v      = s->v;
+    double *w      = s->w;
+    double *f      = s->f;
+    double *g      = s->g;
+    double *h      = s->h;
 
     double factorX = s->dt / s->grid.dx;
     double factorY = s->dt / s->grid.dy;

@@ -12,29 +12,28 @@
 #include "util.h"
 #define MAXLINE 4096
 
-void initParameter(Parameter* param)
+void initParameter(Parameter *param)
 {
-    param->xlength     = 1.0;
-    param->ylength     = 1.0;
-    param->zlength     = 1.0;
-    param->imax        = 100;
-    param->jmax        = 100;
-    param->kmax        = 100;
-    param->itermax     = 1000;
-    param->eps         = 0.0001;
-    param->omg         = 1.7;
-    param->re          = 100.0;
-    param->gamma       = 0.9;
-    param->tau         = 0.5;
+    param->xlength    = 1.0;
+    param->ylength    = 1.0;
+    param->zlength    = 1.0;
+    param->imax       = 100;
+    param->jmax       = 100;
+    param->kmax       = 100;
+    param->itermax    = 1000;
+    param->eps        = 0.0001;
+    param->omg        = 1.7;
+    param->re         = 100.0;
+    param->gamma      = 0.9;
+    param->tau        = 0.5;
     param->levels     = 5;
     param->presmooth  = 5;
     param->postsmooth = 5;
-
 }
 
-void readParameter(Parameter* param, const char* filename)
+void readParameter(Parameter *param, const char *filename)
 {
-    FILE* fp = fopen(filename, "r");
+    FILE *fp = fopen(filename, "r");
     char line[MAXLINE];
     int i;
 
@@ -48,18 +47,18 @@ void readParameter(Parameter* param, const char* filename)
         fgets(line, MAXLINE, fp);
         for (i = 0; line[i] != '\0' && line[i] != '#'; i++)
             ;
-        line[i] = '\0';
+        line[i]   = '\0';
 
-        char* tok = strtok(line, " ");
-        char* val = strtok(NULL, " ");
+        char *tok = strtok(line, " ");
+        char *val = strtok(NULL, " ");
 
 #define PARSE_PARAM(p, f)                                                                \
     if (strncmp(tok, #p, sizeof(#p) / sizeof(#p[0]) - 1) == 0) {                         \
         param->p = f(val);                                                               \
     }
 #define PARSE_STRING(p) PARSE_PARAM(p, strdup)
-#define PARSE_INT(p)    PARSE_PARAM(p, atoi)
-#define PARSE_REAL(p)   PARSE_PARAM(p, atof)
+#define PARSE_INT(p) PARSE_PARAM(p, atoi)
+#define PARSE_REAL(p) PARSE_PARAM(p, atof)
 
         if (tok != NULL && val != NULL) {
             PARSE_REAL(xlength);
@@ -99,7 +98,7 @@ void readParameter(Parameter* param, const char* filename)
     fclose(fp);
 }
 
-void printParameter(Parameter* param)
+void printParameter(Parameter *param)
 {
     printf("Parameters for %s\n", param->name);
     printf("Boundary conditions Left:%d Right:%d Bottom:%d Top:%d Front:%d "

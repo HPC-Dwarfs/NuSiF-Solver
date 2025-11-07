@@ -16,7 +16,7 @@
 #include "timing.h"
 #include "vtkWriter.h"
 
-int main(int argc, char** argv)
+int main(int argc, char **argv)
 {
     double timeStart, timeStop;
     Parameter p;
@@ -25,8 +25,9 @@ int main(int argc, char** argv)
 
     commInit(&d.comm, argc, argv);
     initParameter(&p);
-    FILE* fp;
-    if (commIsMaster(&d.comm)) fp = initResidualWriter();
+    FILE *fp;
+    if (commIsMaster(&d.comm))
+        fp = initResidualWriter();
 
     if (argc != 2) {
         printf("Usage: %s <configFile>\n", argv[0]);
@@ -53,18 +54,21 @@ int main(int argc, char** argv)
     int nt     = 0;
     double res = 0.0;
 
-    timeStart = getTimeStamp();
+    timeStart  = getTimeStamp();
     while (t <= te) {
-        if (tau > 0.0) computeTimestep(&d);
+        if (tau > 0.0)
+            computeTimestep(&d);
         setBoundaryConditions(&d);
         setSpecialBoundaryCondition(&d);
         computeFG(&d);
         computeRHS(&d);
-        if (nt % 100 == 0) normalizePressure(&d);
+        if (nt % 100 == 0)
+            normalizePressure(&d);
         res = solve(&s, d.p, d.rhs);
         adaptUV(&d);
 
-        if (commIsMaster(&d.comm)) writeResidual(fp, t, res);
+        if (commIsMaster(&d.comm))
+            writeResidual(fp, t, res);
 
         t += d.dt;
         nt++;
@@ -93,17 +97,18 @@ int main(int argc, char** argv)
     vtkVector(&opts, "velocity", (VtkVector) { d.u, d.v, d.w });
     vtkClose(&opts);
 #else
-    if (commIsMaster(&d.comm)) fclose(fp);
+    if (commIsMaster(&d.comm))
+        fclose(fp);
 
     double *pg, *ug, *vg, *wg;
 
     if (commIsMaster(s.comm)) {
         size_t bytesize = s.grid->imax * s.grid->jmax * s.grid->kmax * sizeof(double);
 
-        pg = allocate(64, bytesize);
-        ug = allocate(64, bytesize);
-        vg = allocate(64, bytesize);
-        wg = allocate(64, bytesize);
+        pg              = allocate(64, bytesize);
+        ug              = allocate(64, bytesize);
+        vg              = allocate(64, bytesize);
+        wg              = allocate(64, bytesize);
     }
 
     commCollectResult(s.comm,

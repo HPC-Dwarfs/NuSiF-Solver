@@ -18,17 +18,17 @@ static int sizeOfRank(int rank, int size, int N)
     return N / size + ((N % size > rank) ? 1 : 0);
 }
 
-static void setupCommunication(Comm* c, Direction direction, int layer)
+static void setupCommunication(Comm *c, Direction direction, int layer)
 {
-    int imaxLocal = c->imaxLocal;
-    int jmaxLocal = c->jmaxLocal;
-    int kmaxLocal = c->kmaxLocal;
+    int imaxLocal  = c->imaxLocal;
+    int jmaxLocal  = c->jmaxLocal;
+    int kmaxLocal  = c->kmaxLocal;
 
     size_t dblsize = sizeof(double);
     int sizes[NDIMS];
     int subSizes[NDIMS];
     int starts[NDIMS];
-    int offset = 0;
+    int offset  = 0;
 
     sizes[IDIM] = imaxLocal + 2;
     sizes[JDIM] = jmaxLocal + 2;
@@ -113,9 +113,9 @@ static void setupCommunication(Comm* c, Direction direction, int layer)
     }
 }
 
-static void assembleResult(Comm* c,
-    double* src,
-    double* dst,
+static void assembleResult(Comm *c,
+    double *src,
+    double *dst,
     int imaxLocal[],
     int jmaxLocal[],
     int kmaxLocal[],
@@ -150,13 +150,8 @@ static void assembleResult(Comm* c,
             int starts[NDIMS]   = { offset[i * NDIMS + KDIM],
                   offset[i * NDIMS + JDIM],
                   offset[i * NDIMS + IDIM] };
-            MPI_Type_create_subarray(NDIMS,
-                oldSizes,
-                newSizes,
-                starts,
-                MPI_ORDER_C,
-                MPI_DOUBLE,
-                &domainType);
+            MPI_Type_create_subarray(
+                NDIMS, oldSizes, newSizes, starts, MPI_ORDER_C, MPI_DOUBLE, &domainType);
             MPI_Type_commit(&domainType);
 
             MPI_Irecv(dst, 1, domainType, i, 0, c->comm, &requests[i + 1]);
@@ -168,7 +163,7 @@ static void assembleResult(Comm* c,
 }
 
 // subroutines local to this module
-static int sum(int* sizes, int init, int offset, int coord)
+static int sum(int *sizes, int init, int offset, int coord)
 {
     int sum = 0;
 
@@ -181,7 +176,7 @@ static int sum(int* sizes, int init, int offset, int coord)
 #endif // defined _MPI
 
 // exported subroutines
-void commReduction(double* v, int op)
+void commReduction(double *v, int op)
 {
 #if defined(_MPI)
     if (op == MAX) {
@@ -192,7 +187,7 @@ void commReduction(double* v, int op)
 #endif
 }
 
-int commIsBoundary(Comm* c, Direction direction)
+int commIsBoundary(Comm *c, Direction direction)
 {
 #if defined(_MPI)
     switch (direction) {
@@ -223,7 +218,7 @@ int commIsBoundary(Comm* c, Direction direction)
     return 1;
 }
 
-void commExchange(Comm* c, double* grid)
+void commExchange(Comm *c, double *grid)
 {
 #if defined(_MPI)
     int counts[6]      = { 1, 1, 1, 1, 1, 1 };
@@ -241,7 +236,7 @@ void commExchange(Comm* c, double* grid)
 #endif
 }
 
-void commShift(Comm* c, double* f, double* g, double* h)
+void commShift(Comm *c, double *f, double *g, double *h)
 {
 #if defined(_MPI)
     MPI_Request requests[6] = { MPI_REQUEST_NULL,
@@ -253,13 +248,8 @@ void commShift(Comm* c, double* f, double* g, double* h)
 
     /* shift G */
     /* receive ghost cells from bottom neighbor */
-    MPI_Irecv(g,
-        1,
-        c->rbufferTypes[BOTTOM],
-        c->neighbours[BOTTOM],
-        0,
-        c->comm,
-        &requests[0]);
+    MPI_Irecv(
+        g, 1, c->rbufferTypes[BOTTOM], c->neighbours[BOTTOM], 0, c->comm, &requests[0]);
 
     /* send ghost cells to top neighbor */
     MPI_Isend(g, 1, c->sbufferTypes[TOP], c->neighbours[TOP], 0, c->comm, &requests[1]);
@@ -269,23 +259,13 @@ void commShift(Comm* c, double* f, double* g, double* h)
     MPI_Irecv(f, 1, c->rbufferTypes[LEFT], c->neighbours[LEFT], 1, c->comm, &requests[2]);
 
     /* send ghost cells to right neighbor */
-    MPI_Isend(f,
-        1,
-        c->sbufferTypes[RIGHT],
-        c->neighbours[RIGHT],
-        1,
-        c->comm,
-        &requests[3]);
+    MPI_Isend(
+        f, 1, c->sbufferTypes[RIGHT], c->neighbours[RIGHT], 1, c->comm, &requests[3]);
 
     /* shift H */
     /* receive ghost cells from front neighbor */
-    MPI_Irecv(h,
-        1,
-        c->rbufferTypes[FRONT],
-        c->neighbours[FRONT],
-        2,
-        c->comm,
-        &requests[4]);
+    MPI_Irecv(
+        h, 1, c->rbufferTypes[FRONT], c->neighbours[FRONT], 2, c->comm, &requests[4]);
 
     /* send ghost cells to back neighbor */
     MPI_Isend(h, 1, c->sbufferTypes[BACK], c->neighbours[BACK], 2, c->comm, &requests[5]);
@@ -294,7 +274,7 @@ void commShift(Comm* c, double* f, double* g, double* h)
 #endif
 }
 
-void commGetOffsets(Comm* c, int offsets[], int kmax, int jmax, int imax)
+void commGetOffsets(Comm *c, int offsets[], int kmax, int jmax, int imax)
 {
 #if defined(_MPI)
     int sum = 0;
@@ -321,15 +301,15 @@ void commGetOffsets(Comm* c, int offsets[], int kmax, int jmax, int imax)
 #define G(v, i, j, k)                                                                    \
     v[(k) * (imaxLocal + 2) * (jmaxLocal + 2) + (j) * (imaxLocal + 2) + (i)]
 
-void commCollectResult(Comm* c,
-    double* ug,
-    double* vg,
-    double* wg,
-    double* pg,
-    double* u,
-    double* v,
-    double* w,
-    double* p,
+void commCollectResult(Comm *c,
+    double *ug,
+    double *vg,
+    double *wg,
+    double *pg,
+    double *u,
+    double *v,
+    double *w,
+    double *p,
     int kmax,
     int jmax,
     int imax)
@@ -351,10 +331,8 @@ void commCollectResult(Comm* c,
         for (int i = 0; i < c->size; i++) {
             int coords[NCORDS];
             MPI_Cart_coords(c->comm, i, NDIMS, coords);
-            offset[i * NDIMS + IDIM] = sum(imaxLocalAll,
-                i,
-                c->dims[IDIM] * c->dims[JDIM],
-                coords[ICORD]);
+            offset[i * NDIMS + IDIM] =
+                sum(imaxLocalAll, i, c->dims[IDIM] * c->dims[JDIM], coords[ICORD]);
             offset[i * NDIMS + JDIM] = sum(jmaxLocalAll, i, c->dims[IDIM], coords[JCORD]);
             offset[i * NDIMS + KDIM] = sum(kmaxLocalAll, i, 1, coords[KCORD]);
 
@@ -374,7 +352,7 @@ void commCollectResult(Comm* c,
     }
 
     size_t bytesize = imaxLocal * jmaxLocal * kmaxLocal * sizeof(double);
-    double* tmp     = allocate(64, bytesize);
+    double *tmp     = allocate(64, bytesize);
     int idx         = 0;
 
     /* collect P */
@@ -386,16 +364,8 @@ void commCollectResult(Comm* c,
         }
     }
 
-    assembleResult(c,
-        tmp,
-        pg,
-        imaxLocalAll,
-        jmaxLocalAll,
-        kmaxLocalAll,
-        offset,
-        kmax,
-        jmax,
-        imax);
+    assembleResult(
+        c, tmp, pg, imaxLocalAll, jmaxLocalAll, kmaxLocalAll, offset, kmax, jmax, imax);
 
     /* collect U */
     idx = 0;
@@ -408,16 +378,8 @@ void commCollectResult(Comm* c,
         }
     }
 
-    assembleResult(c,
-        tmp,
-        ug,
-        imaxLocalAll,
-        jmaxLocalAll,
-        kmaxLocalAll,
-        offset,
-        kmax,
-        jmax,
-        imax);
+    assembleResult(
+        c, tmp, ug, imaxLocalAll, jmaxLocalAll, kmaxLocalAll, offset, kmax, jmax, imax);
 
     /* collect V */
     idx = 0;
@@ -430,16 +392,8 @@ void commCollectResult(Comm* c,
         }
     }
 
-    assembleResult(c,
-        tmp,
-        vg,
-        imaxLocalAll,
-        jmaxLocalAll,
-        kmaxLocalAll,
-        offset,
-        kmax,
-        jmax,
-        imax);
+    assembleResult(
+        c, tmp, vg, imaxLocalAll, jmaxLocalAll, kmaxLocalAll, offset, kmax, jmax, imax);
 
     /* collect W */
     idx = 0;
@@ -452,16 +406,8 @@ void commCollectResult(Comm* c,
         }
     }
 
-    assembleResult(c,
-        tmp,
-        wg,
-        imaxLocalAll,
-        jmaxLocalAll,
-        kmaxLocalAll,
-        offset,
-        kmax,
-        jmax,
-        imax);
+    assembleResult(
+        c, tmp, wg, imaxLocalAll, jmaxLocalAll, kmaxLocalAll, offset, kmax, jmax, imax);
 
     free(tmp);
 #else
@@ -507,7 +453,7 @@ void commCollectResult(Comm* c,
 #endif
 }
 
-void commPrintConfig(Comm* c)
+void commPrintConfig(Comm *c)
 {
 #if defined(_MPI)
     fflush(stdout);
@@ -519,7 +465,8 @@ void commPrintConfig(Comm* c)
     for (int i = 0; i < c->size; i++) {
         if (i == c->rank) {
             printf("\tRank %d of %d\n", c->rank, c->size);
-            printf("\tNeighbours (front, back, bottom, top, left, right): %d, %d, %d, "
+            printf("\tNeighbours (front, back, bottom, top, left, right): %d, "
+                   "%d, %d, "
                    "%d, %d, %d\n",
                 c->neighbours[FRONT],
                 c->neighbours[BACK],
@@ -542,7 +489,7 @@ void commPrintConfig(Comm* c)
 #endif
 }
 
-void commInit(Comm* c, int argc, char** argv)
+void commInit(Comm *c, int argc, char **argv)
 {
 #if defined(_MPI)
     MPI_Init(&argc, &argv);
@@ -554,7 +501,7 @@ void commInit(Comm* c, int argc, char** argv)
 #endif
 }
 
-void commPartition(Comm* c, int kmax, int jmax, int imax)
+void commPartition(Comm *c, int kmax, int jmax, int imax)
 {
 #if defined(_MPI)
     int dims[NDIMS]    = { 0, 0, 0 };
@@ -590,7 +537,7 @@ void commPartition(Comm* c, int kmax, int jmax, int imax)
 #endif
 }
 
-void commFinalize(Comm* c)
+void commFinalize(Comm *c)
 {
 #if defined(_MPI)
     for (int i = 0; i < NDIRS; i++) {
@@ -603,7 +550,7 @@ void commFinalize(Comm* c)
 }
 
 void commUpdateDatatypes(
-    Comm* oldcomm, Comm* newcomm, int imaxLocal, int jmaxLocal, int kmaxLocal)
+    Comm *oldcomm, Comm *newcomm, int imaxLocal, int jmaxLocal, int kmaxLocal)
 {
 #if defined _MPI
 
@@ -613,8 +560,8 @@ void commUpdateDatatypes(
         printf("\nNull communicator. Duplication failed !!\n");
     }
 
-    newcomm->rank = oldcomm->rank;
-    newcomm->size = oldcomm->size;
+    newcomm->rank      = oldcomm->rank;
+    newcomm->size      = oldcomm->size;
 
     newcomm->imaxLocal = imaxLocal / 2;
     newcomm->jmaxLocal = jmaxLocal / 2;
@@ -639,7 +586,7 @@ void commUpdateDatatypes(
 #endif
 }
 
-void commFreeCommunicator(Comm* comm)
+void commFreeCommunicator(Comm *comm)
 {
 #ifdef _MPI
     MPI_Comm_free(&comm->comm);

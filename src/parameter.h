@@ -15,13 +15,13 @@ typedef struct {
     double re, tau, gamma;
     double te, dt;
     double gx, gy, gz;
-    char* name;
+    char *name;
     int bcLeft, bcRight, bcBottom, bcTop, bcFront, bcBack;
     double u_init, v_init, w_init, p_init;
     int levels, presmooth, postsmooth;
 } Parameter;
 
-void initParameter(Parameter*);
-void readParameter(Parameter*, const char*);
-void printParameter(Parameter*);
+void initParameter(Parameter *);
+void readParameter(Parameter *, const char *);
+void printParameter(Parameter *);
 #endif

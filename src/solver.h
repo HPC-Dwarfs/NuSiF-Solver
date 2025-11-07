@@ -7,13 +7,13 @@
 #ifndef __SOLVER_H_
 #define __SOLVER_H_
 #include "comm.h"
+#include "discretization.h"
 #include "grid.h"
 #include "parameter.h"
-#include "discretization.h"
 
 typedef struct {
     /* geometry and grid information */
-    Grid* grid;
+    Grid *grid;
     /* arrays */
     double *p, *rhs;
     double *f, *g, *h;
@@ -26,14 +26,14 @@ typedef struct {
     int itermax;
     double dt, te;
     double dtBound;
-    char* problem;
+    char *problem;
     int bcLeft, bcRight, bcBottom, bcTop, bcFront, bcBack;
     /* communication */
     double **r, **e;
     int levels, presmooth, postsmooth;
-    Comm* comm;
+    Comm *comm;
 } Solver;
 
-extern double solve(Solver* , double* , double* );
-extern void initSolver(Solver*, Discretization*, Parameter*);
+extern double solve(Solver *, double *, double *);
+extern void initSolver(Solver *, Discretization *, Parameter *);
 #endif

@@ -7,9 +7,9 @@
 #ifndef __DISCRETIZATION_H_
 #define __DISCRETIZATION_H_
 
+#include "comm.h"
 #include "grid.h"
 #include "parameter.h"
-#include "comm.h"
 
 enum BC { NOSLIP = 1, SLIP, OUTFLOW, PERIODIC };
 
@@ -28,17 +28,17 @@ typedef struct {
     int itermax;
     double dt, te;
     double dtBound;
-    char* problem;
+    char *problem;
     int bcLeft, bcRight, bcBottom, bcTop, bcFront, bcBack;
     Comm comm;
 } Discretization;
 
-extern void initDiscretization(Discretization*, Parameter*);
-extern void computeRHS(Discretization*);
-extern void normalizePressure(Discretization*);
-extern void computeTimestep(Discretization*);
-extern void setBoundaryConditions(Discretization*);
-extern void setSpecialBoundaryCondition(Discretization*);
-extern void computeFG(Discretization*);
-extern void adaptUV(Discretization*);
+extern void initDiscretization(Discretization *, Parameter *);
+extern void computeRHS(Discretization *);
+extern void normalizePressure(Discretization *);
+extern void computeTimestep(Discretization *);
+extern void setBoundaryConditions(Discretization *);
+extern void setSpecialBoundaryCondition(Discretization *);
+extern void computeFG(Discretization *);
+extern void adaptUV(Discretization *);
 #endif

@@ -8,6 +8,6 @@
 #define __TEST_H_
 #include "solver.h"
 
-extern void testInit(Solver* s);
-extern void testPrintHalo(Solver* s, double* a);
+extern void testInit(Solver *s);
+extern void testPrintHalo(Solver *s, double *a);
 #endif // __TEST_H_

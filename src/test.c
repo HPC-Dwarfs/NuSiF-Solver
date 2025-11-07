@@ -12,16 +12,16 @@
 #define G(v, i, j, k)                                                                    \
     v[(k) * (imaxLocal + 2) * (jmaxLocal + 2) + (j) * (imaxLocal + 2) + (i)]
 
-void testInit(Solver* s)
+void testInit(Solver *s)
 {
     int imaxLocal = s->comm->imaxLocal;
     int jmaxLocal = s->comm->jmaxLocal;
     int kmaxLocal = s->comm->kmaxLocal;
     int myrank    = s->comm->rank;
-    double* p     = s->p;
-    double* f     = s->f;
-    double* g     = s->g;
-    double* h     = s->h;
+    double *p     = s->p;
+    double *f     = s->f;
+    double *g     = s->g;
+    double *h     = s->h;
 
     for (int k = 0; k < kmaxLocal + 2; k++) {
         for (int j = 0; j < jmaxLocal + 2; j++) {
@@ -46,7 +46,7 @@ void testInit(Solver* s)
     }
 }
 
-static char* direction2String(Direction dir)
+static char *direction2String(Direction dir)
 {
     switch (dir) {
     case LEFT:
@@ -74,14 +74,14 @@ static char* direction2String(Direction dir)
     }
 }
 
-static void printPlane(Solver* s, double* a, int ymax, int xmax, Direction dir)
+static void printPlane(Solver *s, double *a, int ymax, int xmax, Direction dir)
 {
     int imaxLocal = s->comm->imaxLocal;
     int jmaxLocal = s->comm->jmaxLocal;
     int kmaxLocal = s->comm->kmaxLocal;
     char filename[50];
     snprintf(filename, 50, "halo-%s-r%d.txt", direction2String(dir), s->comm->rank);
-    FILE* fh = fopen(filename, "w");
+    FILE *fh = fopen(filename, "w");
 
     for (int y = 0; y < ymax; y++) {
         for (int x = 0; x < xmax; x++) {
@@ -114,7 +114,7 @@ static void printPlane(Solver* s, double* a, int ymax, int xmax, Direction dir)
     fclose(fh);
 }
 
-void testPrintHalo(Solver* s, double* a)
+void testPrintHalo(Solver *s, double *a)
 {
     int imaxLocal = s->comm->imaxLocal;
     int jmaxLocal = s->comm->jmaxLocal;
