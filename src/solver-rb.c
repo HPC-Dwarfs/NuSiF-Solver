@@ -1,9 +1,7 @@
-/*
- * Copyright (C)  NHR@FAU, University Erlangen-Nuremberg.
- * All rights reserved. This file is part of nusif-solver.
+/* Copyright (C) NHR@FAU, University Erlangen-Nuremberg.
+ * All rights reserved. This file is part of NuSiF solver.
  * Use of this source code is governed by a MIT style
- * license that can be found in the LICENSE file.
- */
+ * license that can be found in the LICENSE file. */
 #include <float.h>
 #include <math.h>
 #include <stdio.h>
@@ -48,10 +46,11 @@ double solve(Solver *s, double *p, double *rhs)
     double idy2   = 1.0 / dy2;
     double idz2   = 1.0 / dz2;
 
-    double factor = s->omega * 0.5 * (dx2 * dy2 * dz2) / (dy2 * dz2 + dx2 * dz2 + dx2 * dy2);
-    double epssq  = eps * eps;
-    int it        = 0;
-    double res    = 1.0;
+    double factor =
+        s->omega * 0.5 * (dx2 * dy2 * dz2) / (dy2 * dz2 + dx2 * dz2 + dx2 * dy2);
+    double epssq = eps * eps;
+    int it       = 0;
+    double res   = 1.0;
     int pass, ksw, jsw, isw;
 
     while ((res >= epssq) && (it < itermax)) {
@@ -66,10 +65,13 @@ double solve(Solver *s, double *p, double *rhs)
                 for (int j = 1; j < jmaxLocal + 1; j++) {
                     for (int i = isw; i < imaxLocal + 1; i += 2) {
 
-                        double r = RHS(i, j, k) -
-                                   ((P(i + 1, j, k) - 2.0 * P(i, j, k) + P(i - 1, j, k)) * idx2 +
-                                       (P(i, j + 1, k) - 2.0 * P(i, j, k) + P(i, j - 1, k)) * idy2 +
-                                       (P(i, j, k + 1) - 2.0 * P(i, j, k) + P(i, j, k - 1)) * idz2);
+                        double r =
+                            RHS(i, j, k) -
+                            ((P(i + 1, j, k) - 2.0 * P(i, j, k) + P(i - 1, j, k)) * idx2 +
+                                (P(i, j + 1, k) - 2.0 * P(i, j, k) + P(i, j - 1, k)) *
+                                    idy2 +
+                                (P(i, j, k + 1) - 2.0 * P(i, j, k) + P(i, j, k - 1)) *
+                                    idz2);
 
                         P(i, j, k) -= (factor * r);
                         res += (r * r);
