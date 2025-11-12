@@ -24,6 +24,7 @@ the Donor cell differencing schema is used.
 
 ### Parallelism
 
+- Sequential
 - MPI
 - OpenMP
 
