@@ -28,7 +28,7 @@ typedef struct {
   double dtBound;
   char *problem;
   int bcLeft, bcRight, bcBottom, bcTop, bcFront, bcBack;
-  Comm comm;
+  CommType comm;
 } Discretization;
 
 extern void initDiscretization(Discretization *, Parameter *);

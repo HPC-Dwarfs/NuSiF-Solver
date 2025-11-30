@@ -19,7 +19,7 @@ typedef struct VtkOptions {
   FILE *fh;
   VtkFormat fmt;
 #endif // _VTK_WRITER_MPI
-  Comm comm;
+  CommType comm;
 } VtkOptions;
 
 typedef struct VtkVector {

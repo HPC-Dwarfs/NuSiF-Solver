@@ -29,9 +29,9 @@ typedef struct {
   /* communication */
   double **r, **e;
   int levels, presmooth, postsmooth;
-  Comm *comm;
+  CommType *comm;
 } Solver;
 
-extern double solve(Solver *, double *, double *);
+extern double solve(Solver *, double *, const double *);
 extern void initSolver(Solver *, Discretization *, Parameter *);
 #endif

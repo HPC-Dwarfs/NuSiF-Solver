@@ -44,7 +44,7 @@ void testInit(Solver *s)
   }
 }
 
-static char *direction2String(Direction dir)
+static char *direction2String(DirectionType dir)
 {
   switch (dir) {
   case LEFT:
@@ -72,7 +72,7 @@ static char *direction2String(Direction dir)
   }
 }
 
-static void printPlane(Solver *s, double *a, int ymax, int xmax, Direction dir)
+static void printPlane(Solver *s, double *a, int ymax, int xmax, DirectionType dir)
 {
   int imaxLocal = s->comm->imaxLocal;
   int jmaxLocal = s->comm->jmaxLocal;

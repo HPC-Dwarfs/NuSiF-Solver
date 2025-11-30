@@ -16,7 +16,8 @@
 
 int main(int argc, char **argv)
 {
-  double timeStart, timeStop;
+  double timeStart;
+  double timeStop;
   Parameter p;
   Solver s;
   Discretization d;
@@ -24,8 +25,9 @@ int main(int argc, char **argv)
   commInit(&d.comm, argc, argv);
   initParameter(&p);
   FILE *fp;
-  if (commIsMaster(&d.comm))
+  if (commIsMaster(&d.comm)) {
     fp = initResidualWriter();
+  }
 
   if (argc != 2) {
     printf("Usage: %s <configFile>\n", argv[0]);
@@ -54,19 +56,22 @@ int main(int argc, char **argv)
 
   timeStart  = getTimeStamp();
   while (t <= te) {
-    if (tau > 0.0)
+    if (tau > 0.0) {
       computeTimestep(&d);
+    }
     setBoundaryConditions(&d);
     setSpecialBoundaryCondition(&d);
     computeFG(&d);
     computeRHS(&d);
-    if (nt % 100 == 0)
+    if (nt % 100 == 0) {
       normalizePressure(&d);
+    }
     res = solve(&s, d.p, d.rhs);
     adaptUV(&d);
 
-    if (commIsMaster(&d.comm))
+    if (commIsMaster(&d.comm)) {
       writeResidual(fp, t, res);
+    }
 
     t += d.dt;
     nt++;
@@ -98,15 +103,18 @@ int main(int argc, char **argv)
   if (commIsMaster(&d.comm))
     fclose(fp);
 
-  double *pg, *ug, *vg, *wg;
+  double *pg;
+  double *ug;
+  double *vg;
+  double *wg;
 
   if (commIsMaster(s.comm)) {
     size_t bytesize = s.grid->imax * s.grid->jmax * s.grid->kmax * sizeof(double);
 
-    pg              = allocate(64, bytesize);
-    ug              = allocate(64, bytesize);
-    vg              = allocate(64, bytesize);
-    wg              = allocate(64, bytesize);
+    pg              = allocate(ARRAY_ALIGNMENT, bytesize);
+    ug              = allocate(ARRAY_ALIGNMENT, bytesize);
+    vg              = allocate(ARRAY_ALIGNMENT, bytesize);
+    wg              = allocate(ARRAY_ALIGNMENT, bytesize);
   }
 
   commCollectResult(s.comm,

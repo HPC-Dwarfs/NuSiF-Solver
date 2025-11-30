@@ -16,7 +16,7 @@ static int sizeOfRank(int rank, int size, int N)
   return N / size + ((N % size > rank) ? 1 : 0);
 }
 
-static void setupCommunication(Comm *c, Direction direction, int layer)
+static void setupCommunication(CommType *c, DirectionType direction, int layer)
 {
   int imaxLocal  = c->imaxLocal;
   int jmaxLocal  = c->jmaxLocal;
@@ -111,7 +111,7 @@ static void setupCommunication(Comm *c, Direction direction, int layer)
   }
 }
 
-static void assembleResult(Comm *c,
+static void assembleResult(CommType *c,
     double *src,
     double *dst,
     int imaxLocal[],
@@ -185,7 +185,7 @@ void commReduction(double *v, int op)
 #endif
 }
 
-int commIsBoundary(Comm *c, Direction direction)
+int commIsBoundary(CommType *c, DirectionType direction)
 {
 #if defined(_MPI)
   switch (direction) {
@@ -216,11 +216,11 @@ int commIsBoundary(Comm *c, Direction direction)
   return 1;
 }
 
-void commExchange(Comm *c, double *grid)
+void commExchange(CommType *c, double *grid)
 {
 #if defined(_MPI)
-  int counts[6]      = { 1, 1, 1, 1, 1, 1 };
-  MPI_Aint displs[6] = { 0, 0, 0, 0, 0, 0 };
+  int counts[NDIRS]      = { 1, 1, 1, 1, 1, 1 };
+  MPI_Aint displs[NDIRS] = { 0, 0, 0, 0, 0, 0 };
 
   MPI_Neighbor_alltoallw(grid,
       counts,
@@ -234,10 +234,10 @@ void commExchange(Comm *c, double *grid)
 #endif
 }
 
-void commShift(Comm *c, double *f, double *g, double *h)
+void commShift(CommType *c, double *f, double *g, double *h)
 {
 #if defined(_MPI)
-  MPI_Request requests[6] = { MPI_REQUEST_NULL,
+  MPI_Request requests[NDIRS] = { MPI_REQUEST_NULL,
     MPI_REQUEST_NULL,
     MPI_REQUEST_NULL,
     MPI_REQUEST_NULL,
@@ -266,11 +266,11 @@ void commShift(Comm *c, double *f, double *g, double *h)
   /* send ghost cells to back neighbor */
   MPI_Isend(h, 1, c->sbufferTypes[BACK], c->neighbours[BACK], 2, c->comm, &requests[5]);
 
-  MPI_Waitall(6, requests, MPI_STATUSES_IGNORE);
+  MPI_Waitall(NDIRS, requests, MPI_STATUSES_IGNORE);
 #endif
 }
 
-void commGetOffsets(Comm *c, int offsets[], int kmax, int jmax, int imax)
+void commGetOffsets(CommType *c, int offsets[], int kmax, int jmax, int imax)
 {
 #if defined(_MPI)
   int sum = 0;
@@ -297,7 +297,7 @@ void commGetOffsets(Comm *c, int offsets[], int kmax, int jmax, int imax)
 #define G(v, i, j, k)                                                                    \
   v[(k) * (imaxLocal + 2) * (jmaxLocal + 2) + (j) * (imaxLocal + 2) + (i)]
 
-void commCollectResult(Comm *c,
+void commCollectResult(CommType *c,
     double *ug,
     double *vg,
     double *wg,
@@ -348,7 +348,7 @@ void commCollectResult(Comm *c,
   }
 
   size_t bytesize = imaxLocal * jmaxLocal * kmaxLocal * sizeof(double);
-  double *tmp     = allocate(64, bytesize);
+  double *tmp     = allocate(ARRAY_ALIGNMENT, bytesize);
   int idx         = 0;
 
   /* collect P */
@@ -449,7 +449,7 @@ void commCollectResult(Comm *c,
 #endif
 }
 
-void commPrintConfig(Comm *c)
+void commPrintConfig(CommType *c)
 {
 #if defined(_MPI)
   fflush(stdout);
@@ -485,7 +485,7 @@ void commPrintConfig(Comm *c)
 #endif
 }
 
-void commInit(Comm *c, int argc, char **argv)
+void commInit(CommType *c, int argc, char **argv)
 {
 #if defined(_MPI)
   MPI_Init(&argc, &argv);
@@ -497,7 +497,7 @@ void commInit(Comm *c, int argc, char **argv)
 #endif
 }
 
-void commPartition(Comm *c, int kmax, int jmax, int imax)
+void commPartition(CommType *c, int kmax, int jmax, int imax)
 {
 #if defined(_MPI)
   int dims[NDIMS]    = { 0, 0, 0 };
@@ -533,7 +533,7 @@ void commPartition(Comm *c, int kmax, int jmax, int imax)
 #endif
 }
 
-void commFinalize(Comm *c)
+void commFinalize(CommType *c)
 {
 #if defined(_MPI)
   for (int i = 0; i < NDIRS; i++) {
@@ -546,7 +546,7 @@ void commFinalize(Comm *c)
 }
 
 void commUpdateDatatypes(
-    Comm *oldcomm, Comm *newcomm, int imaxLocal, int jmaxLocal, int kmaxLocal)
+    CommType *oldcomm, CommType *newcomm, int imaxLocal, int jmaxLocal, int kmaxLocal)
 {
 #if defined _MPI
 
@@ -582,7 +582,7 @@ void commUpdateDatatypes(
 #endif
 }
 
-void commFreeCommunicator(Comm *comm)
+void commFreeCommunicator(CommType *comm)
 {
 #ifdef _MPI
   MPI_Comm_free(&comm->comm);

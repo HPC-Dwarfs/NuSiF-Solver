@@ -4,6 +4,9 @@
  * license that can be found in the LICENSE file. */
 #ifndef __COMM_H_
 #define __COMM_H_
+
+#include "stdbool.h"
+
 #if defined(_MPI)
 #include <mpi.h>
 #endif

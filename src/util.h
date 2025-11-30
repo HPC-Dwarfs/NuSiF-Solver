@@ -17,7 +17,7 @@
 #endif
 
 #define P(i, j, k)                                                                       \
-  p[(k) * (imaxLocal + 2) * (jmaxLocal + 2) + (j) * (imaxLocal + 2) + (i)]
+  p[((k) * (imaxLocal + 2) * (jmaxLocal + 2)) + ((j) * (imaxLocal + 2)) + (i)]
 #define F(i, j, k)                                                                       \
   f[(k) * (imaxLocal + 2) * (jmaxLocal + 2) + (j) * (imaxLocal + 2) + (i)]
 #define G(i, j, k)                                                                       \
@@ -31,6 +31,6 @@
 #define W(i, j, k)                                                                       \
   w[(k) * (imaxLocal + 2) * (jmaxLocal + 2) + (j) * (imaxLocal + 2) + (i)]
 #define RHS(i, j, k)                                                                     \
-  rhs[(k) * (imaxLocal + 2) * (jmaxLocal + 2) + (j) * (imaxLocal + 2) + (i)]
+  rhs[((k) * (imaxLocal + 2) * (jmaxLocal + 2)) + ((j) * (imaxLocal + 2)) + (i)]
 
 #endif // __UTIL_H_
