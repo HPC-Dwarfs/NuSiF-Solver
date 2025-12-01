@@ -14,10 +14,8 @@
 #include "timing.h"
 #include "util.h"
 
+#define MAX_STR_LENGTH 30
 typedef enum { SOLVER = 0, COMM, NUMREGIONS } RegionsType;
-static double CommVolume = 0.0;
-static double T[NUMREGIONS];
-static size_t C[NUMREGIONS];
 
 #ifdef VERBOSE
 #define PROFILE(tag, call)                                                               \
@@ -25,6 +23,11 @@ static size_t C[NUMREGIONS];
   call;                                                                                  \
   T[tag] += (getTimeStamp() - ts);                                                       \
   C[tag]++;
+
+static double CommVolume = 0.0;
+static double T[NUMREGIONS];
+static size_t C[NUMREGIONS];
+static FILE *Filehandle;
 #else
 #define PROFILE(call) call;
 #endif
@@ -41,15 +44,15 @@ static void initProfile(CommType *c)
 
   for (int i = 0; i < NDIRS; i++) {
     MPI_Type_size(c->sbufferTypes[i], &tmpSize);
-    printf("TMP: %d ", tmpSize);
     totalSize += tmpSize;
     MPI_Type_size(c->rbufferTypes[i], &tmpSize);
-    printf(" %d ", tmpSize);
     totalSize += tmpSize;
   }
-  printf("\n");
 
   CommVolume = totalSize * 1.E-6;
+  char filename[MAX_STR_LENGTH];
+  sprintf(filename, "profile-%d.txt", c->rank);
+  Filehandle = fopen(filename, "w");
 }
 
 static void printProfile(Solver *s, int it)
@@ -85,20 +88,22 @@ static void printProfile(Solver *s, int it)
 
     printf(
         "min %11.2f  max %11.2f avg %11.2f\n", tmin[SOLVER], tmax[SOLVER], tavg[SOLVER]);
-
-    dataset  = CommVolume * C[COMM];
-    walltime = tavg[COMM];
-    printf("Calls %lu Communication Time: %.2f s Data volume: %.2f MB Bandwidth: %.2f "
-           "MB/s\n",
-        C[COMM],
-        walltime,
-        dataset,
-        dataset / walltime);
-    printf("Communication Time/Call: %.6f s Data volume/Call: %.3f"
-           "MB\n",
-        walltime / C[COMM],
-        dataset / C[COMM]);
   }
+
+  double dataset  = CommVolume * C[COMM];
+  double walltime = T[COMM];
+  fprintf(Filehandle,
+      "Calls %lu Communication Time: %.2f s Data volume: %.2f MB Bandwidth: %.2f "
+      "MB/s\n",
+      C[COMM],
+      walltime,
+      dataset,
+      dataset / walltime);
+  fprintf(Filehandle,
+      "Communication Time/Call: %.6f s Data volume/Call: %.3f"
+      "MB\n",
+      walltime / C[COMM],
+      dataset / C[COMM]);
 
   C[SOLVER] = 0;
   C[COMM]   = 0;
@@ -116,6 +121,11 @@ void initSolver(Solver *s, Discretization *d, Parameter *p)
   s->problem = p->name;
 
   initProfile(s->comm);
+}
+
+void finalizeSolver()
+{
+  fclose(Filehandle);
 }
 
 double solve(Solver *s, double *p, const double *rhs)
