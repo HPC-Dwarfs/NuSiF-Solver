@@ -174,13 +174,37 @@ static int sum(int *sizes, int init, int offset, int coord)
 #endif // defined _MPI
 
 // exported subroutines
-void commReduction(double *v, int op)
+void commReduceAll(double *v, int op)
 {
 #if defined(_MPI)
-  if (op == MAX) {
+  switch (op) {
+  case MAX:
     MPI_Allreduce(MPI_IN_PLACE, v, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-  } else if (op == SUM) {
+  case MIN:
+    MPI_Allreduce(MPI_IN_PLACE, v, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
+  case SUM:
     MPI_Allreduce(MPI_IN_PLACE, v, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+  }
+#endif
+}
+
+extern void commReduce(double *v, double *o, int count, int op)
+{
+#if defined(_MPI)
+  switch (op) {
+  case MAX:
+    MPI_Reduce(v, o, count, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+    break;
+  case MIN:
+    MPI_Reduce(v, o, count, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
+    break;
+  case SUM:
+    MPI_Reduce(v, o, count, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    break;
+  }
+#else
+  for (int i = 0; i < count; i++) {
+    o[i] = v[i];
   }
 #endif
 }

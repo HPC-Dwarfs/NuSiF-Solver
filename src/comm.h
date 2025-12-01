@@ -22,7 +22,7 @@ typedef enum direction { LEFT = 0, RIGHT, BOTTOM, TOP, FRONT, BACK, NDIRS } Dire
 typedef enum coordinates { ICORD = 0, JCORD, KCORD, NCORDS } CoordinatesType;
 typedef enum dimension { KDIM = 0, JDIM, IDIM, NDIMS } DimensionType;
 enum layer { HALO = 0, BULK };
-enum op { MAX = 0, SUM };
+enum op { MIN = 0, MAX, SUM };
 
 typedef struct {
   int rank;
@@ -43,7 +43,8 @@ extern void commFinalize(CommType *comm);
 extern void commPrintConfig(CommType *);
 extern void commExchange(CommType *, double *);
 extern void commShift(CommType *c, double *f, double *g, double *h);
-extern void commReduction(double *v, int op);
+extern void commReduceAll(double *v, int op);
+extern void commReduce(double *v, double *o, int count, int op);
 extern int commIsBoundary(CommType *c, DirectionType direction);
 extern void commGetOffsets(CommType *c, int offsets[], int kmax, int jmax, int imax);
 extern void commFreeCommunicator(CommType *comm);

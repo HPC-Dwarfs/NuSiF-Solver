@@ -8,108 +8,11 @@
 #include <stdio.h>
 
 #include "comm.h"
-#include "mpi_proto.h"
 #include "parameter.h"
+#include "profiler.h"
 #include "solver.h"
 #include "timing.h"
 #include "util.h"
-
-#define MAX_STR_LENGTH 30
-typedef enum { SOLVER = 0, COMM, NUMREGIONS } RegionsType;
-
-#ifdef VERBOSE
-#define PROFILE(tag, call)                                                               \
-  const double ts = getTimeStamp();                                                      \
-  call;                                                                                  \
-  T[tag] += (getTimeStamp() - ts);                                                       \
-  C[tag]++;
-
-static double CommVolume = 0.0;
-static double T[NUMREGIONS];
-static size_t C[NUMREGIONS];
-static FILE *Filehandle;
-#else
-#define PROFILE(call) call;
-#endif
-
-static void initProfile(CommType *c)
-{
-  int tmpSize      = 0;
-  double totalSize = 0.0;
-
-  for (size_t i = 0; i < NUMREGIONS; i++) {
-    T[i] = 0.0;
-    C[i] = 0;
-  }
-
-  for (int i = 0; i < NDIRS; i++) {
-    MPI_Type_size(c->sbufferTypes[i], &tmpSize);
-    totalSize += tmpSize;
-    MPI_Type_size(c->rbufferTypes[i], &tmpSize);
-    totalSize += tmpSize;
-  }
-
-  CommVolume = totalSize * 1.E-6;
-  char filename[MAX_STR_LENGTH];
-  sprintf(filename, "profile-%d.txt", c->rank);
-  Filehandle = fopen(filename, "w");
-}
-
-static void printProfile(Solver *s, int it)
-{
-  CommType *c = s->comm;
-  double tmin[NUMREGIONS];
-  double tmax[NUMREGIONS];
-  double tavg[NUMREGIONS];
-
-  MPI_Reduce(T, tmin, NUMREGIONS, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
-  MPI_Reduce(T, tmax, NUMREGIONS, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-  MPI_Reduce(T, tavg, NUMREGIONS, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-
-  if (commIsMaster(c)) {
-    int imaxLocal       = s->comm->imaxLocal;
-    int jmaxLocal       = s->comm->jmaxLocal;
-    int kmaxLocal       = s->comm->kmaxLocal;
-    double datapoints   = (kmaxLocal + 2) * (jmaxLocal + 2) * (imaxLocal + 2);
-    double updatepoints = kmaxLocal * jmaxLocal * imaxLocal;
-    double dataset      = datapoints * 16.0 * 1.E-6;
-    double mlups        = (it * updatepoints) * 1.E-6;
-
-    for (int i = 0; i < NUMREGIONS; i++) {
-      tavg[i] /= c->size;
-    }
-
-    double walltime = tavg[SOLVER];
-
-    printf("Solver Time: %.2f s Dataset size: %.2f MB Performance: %.2f MLUPS/s\n",
-        walltime,
-        dataset,
-        mlups / walltime);
-
-    printf(
-        "min %11.2f  max %11.2f avg %11.2f\n", tmin[SOLVER], tmax[SOLVER], tavg[SOLVER]);
-  }
-
-  double dataset  = CommVolume * C[COMM];
-  double walltime = T[COMM];
-  fprintf(Filehandle,
-      "Calls %lu Communication Time: %.2f s Data volume: %.2f MB Bandwidth: %.2f "
-      "MB/s\n",
-      C[COMM],
-      walltime,
-      dataset,
-      dataset / walltime);
-  fprintf(Filehandle,
-      "Communication Time/Call: %.6f s Data volume/Call: %.3f"
-      "MB\n",
-      walltime / C[COMM],
-      dataset / C[COMM]);
-
-  C[SOLVER] = 0;
-  C[COMM]   = 0;
-  T[SOLVER] = 0;
-  T[COMM]   = 0;
-}
 
 void initSolver(Solver *s, Discretization *d, Parameter *p)
 {
@@ -119,13 +22,6 @@ void initSolver(Solver *s, Discretization *d, Parameter *p)
   s->grid    = &d->grid;
   s->comm    = &d->comm;
   s->problem = p->name;
-
-  initProfile(s->comm);
-}
-
-void finalizeSolver()
-{
-  fclose(Filehandle);
 }
 
 double solve(Solver *s, double *p, const double *rhs)
@@ -154,7 +50,7 @@ double solve(Solver *s, double *p, const double *rhs)
   double res   = 1.0;
   int pass, ksw, jsw, isw;
 
-  double timeStart = getTimeStamp();
+  TIMESTART
   while ((res >= epssq) && (it < itermax)) {
     ksw = 1;
 
@@ -251,7 +147,7 @@ double solve(Solver *s, double *p, const double *rhs)
       }
     }
 #endif
-    commReduction(&res, SUM);
+    commReduceAll(&res, SUM);
     res = res / (double)(imax * jmax * kmax);
 #ifdef DEBUG
     if (commIsMaster(&s->comm)) {
@@ -262,14 +158,14 @@ double solve(Solver *s, double *p, const double *rhs)
     PROFILE(COMM, commExchange(s->comm, p));
     it++;
   }
-  T[SOLVER] = getTimeStamp() - timeStart;
+  TIMESTOP(SOLVER);
 
 #ifdef VERBOSE
   if (commIsMaster(s->comm)) {
     printf("Solver took %d iterations to reach %f\n", it, sqrt(res));
   }
 
-  printProfile(s, it);
+  printProfile(s->comm, it);
 #endif
 
   return res;

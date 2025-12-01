@@ -8,26 +8,10 @@
 #include <string.h>
 
 #include "allocate.h"
+#include "comm.h"
 #include "discretization.h"
 #include "parameter.h"
 #include "util.h"
-
-#define P(i, j, k)                                                                       \
-  p[(k) * (imaxLocal + 2) * (jmaxLocal + 2) + (j) * (imaxLocal + 2) + (i)]
-#define F(i, j, k)                                                                       \
-  f[(k) * (imaxLocal + 2) * (jmaxLocal + 2) + (j) * (imaxLocal + 2) + (i)]
-#define G(i, j, k)                                                                       \
-  g[(k) * (imaxLocal + 2) * (jmaxLocal + 2) + (j) * (imaxLocal + 2) + (i)]
-#define H(i, j, k)                                                                       \
-  h[(k) * (imaxLocal + 2) * (jmaxLocal + 2) + (j) * (imaxLocal + 2) + (i)]
-#define U(i, j, k)                                                                       \
-  u[(k) * (imaxLocal + 2) * (jmaxLocal + 2) + (j) * (imaxLocal + 2) + (i)]
-#define V(i, j, k)                                                                       \
-  v[(k) * (imaxLocal + 2) * (jmaxLocal + 2) + (j) * (imaxLocal + 2) + (i)]
-#define W(i, j, k)                                                                       \
-  w[(k) * (imaxLocal + 2) * (jmaxLocal + 2) + (j) * (imaxLocal + 2) + (i)]
-#define RHS(i, j, k)                                                                     \
-  rhs[(k) * (imaxLocal + 2) * (jmaxLocal + 2) + (j) * (imaxLocal + 2) + (i)]
 
 static void printConfig(Discretization *s)
 {
@@ -101,13 +85,13 @@ void initDiscretization(Discretization *s, Parameter *params)
   size_t size   = (imaxLocal + 2) * (jmaxLocal + 2) * (kmaxLocal + 2);
 
   s->u          = allocate(ARRAY_ALIGNMENT, size * sizeof(double));
-  s->v          = allocate(64, size * sizeof(double));
-  s->w          = allocate(64, size * sizeof(double));
-  s->p          = allocate(64, size * sizeof(double));
-  s->rhs        = allocate(64, size * sizeof(double));
-  s->f          = allocate(64, size * sizeof(double));
-  s->g          = allocate(64, size * sizeof(double));
-  s->h          = allocate(64, size * sizeof(double));
+  s->v          = allocate(ARRAY_ALIGNMENT, size * sizeof(double));
+  s->w          = allocate(ARRAY_ALIGNMENT, size * sizeof(double));
+  s->p          = allocate(ARRAY_ALIGNMENT, size * sizeof(double));
+  s->rhs        = allocate(ARRAY_ALIGNMENT, size * sizeof(double));
+  s->f          = allocate(ARRAY_ALIGNMENT, size * sizeof(double));
+  s->g          = allocate(ARRAY_ALIGNMENT, size * sizeof(double));
+  s->h          = allocate(ARRAY_ALIGNMENT, size * sizeof(double));
 
   for (int i = 0; i < size; i++) {
     s->u[i]   = params->u_init;
@@ -412,7 +396,7 @@ static double maxElement(Discretization *s, double *m)
   for (int i = 0; i < size; i++) {
     maxval = MAX(maxval, fabs(m[i]));
   }
-  commReduction(&maxval, MAX);
+  commReduceAll(&maxval, MAX);
   return maxval;
 }
 
@@ -432,7 +416,7 @@ void normalizePressure(Discretization *s)
       }
     }
   }
-  commReduction(&avgP, SUM);
+  commReduceAll(&avgP, SUM);
   avgP /= (s->grid.imax * s->grid.jmax * s->grid.kmax);
 
   for (int k = 1; k < kmaxLocal + 1; k++) {

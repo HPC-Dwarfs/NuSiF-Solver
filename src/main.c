@@ -9,6 +9,7 @@
 #include "allocate.h"
 #include "discretization.h"
 #include "parameter.h"
+#include "profiler.h"
 #include "progress.h"
 #include "solver.h"
 #include "timing.h"
@@ -43,6 +44,7 @@ int main(int argc, char **argv)
 
   initDiscretization(&d, &p);
   initSolver(&s, &d, &p);
+  initProfiler(&d.comm);
 
 #ifndef VERBOSE
   initProgress(d.te);
@@ -146,6 +148,7 @@ int main(int argc, char **argv)
     printf("Result output took %.2fs\n", timeStop - timeStart);
   }
 
+  finalizeProfiler();
   commFinalize(s.comm);
   return EXIT_SUCCESS;
 }
