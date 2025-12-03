@@ -1,7 +1,7 @@
 # Supported: GCC, CLANG, ICX
 TOOLCHAIN ?= CLANG
 # Supported: true, false
-ENABLE_MPI ?= false
+ENABLE_MPI ?= true
 ENABLE_OPENMP ?= false
 # Supported: rb, mg
 SOLVER ?= rb
@@ -11,6 +11,7 @@ VTK_OUTPUT_FMT ?= seq
 #Feature options
 OPTIONS +=  -DARRAY_ALIGNMENT=64
 OPTIONS +=  -DVERBOSE
+OPTIONS +=  -DPROFILING
 #OPTIONS +=  -DDEBUG
 #OPTIONS +=  -DBOUNDCHECK
 #OPTIONS +=  -DVERBOSE_AFFINITY
