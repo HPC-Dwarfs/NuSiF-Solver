@@ -45,8 +45,8 @@ tau      0.5     # safety factor for time stepsize control (<0 constant delt)
 # Multigrid data:
 # ---------
 
-levels        2         # Multigrid levels
-presmooth     20         # Pre-smoothning iterations
+levels        1         # Multigrid levels (should be >= 1)
+presmooth     50        # Pre-smoothning iterations
 postsmooth    5         # Post-smoothning iterations
 
 # Pressure Iteration Data:
@@ -54,6 +54,6 @@ postsmooth    5         # Post-smoothning iterations
 
 itermax       500       # maximal number of pressure iteration in one time step
 eps           0.0001   # stopping tolerance for pressure iteration
-omg           1.7       # relaxation parameter for SOR iteration
+omg           1.8       # relaxation parameter for SOR iteration
 gamma         0.9       # upwind differencing factor gamma
 #===============================================================================

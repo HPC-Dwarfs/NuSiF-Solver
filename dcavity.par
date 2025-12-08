@@ -45,8 +45,8 @@ tau      0.5		# safety factor for time stepsize control (<0 constant delt)
 # Multigrid data:
 # ---------
 
-levels        3         # Multigrid levels
-presmooth     20        # Pre-smoothning iterations
+levels        2         # Multigrid levels (should be >= 1)
+presmooth     50        # Pre-smoothning iterations
 postsmooth    5         # Post-smoothning iterations
 
 # Pressure Iteration Data:

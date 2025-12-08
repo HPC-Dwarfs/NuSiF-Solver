@@ -180,10 +180,13 @@ void commReduceAll(double *v, int op)
   switch (op) {
   case MAX:
     MPI_Allreduce(MPI_IN_PLACE, v, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+    break;
   case MIN:
     MPI_Allreduce(MPI_IN_PLACE, v, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
+    break;
   case SUM:
     MPI_Allreduce(MPI_IN_PLACE, v, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+    break;
   }
 #endif
 }
@@ -609,6 +612,10 @@ void commUpdateDatatypes(
 void commFreeCommunicator(CommType *comm)
 {
 #ifdef _MPI
+  for (int i = 0; i < NDIRS; i++) {
+    MPI_Type_free(&comm->sbufferTypes[i]);
+    MPI_Type_free(&comm->rbufferTypes[i]);
+  }
   MPI_Comm_free(&comm->comm);
 #endif
 }

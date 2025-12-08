@@ -20,20 +20,20 @@
 #define OLD(i, j, k)                                                                     \
   old[(k) * (imaxLocal + 2) * (jmaxLocal + 2) + (j) * (imaxLocal + 2) + (i)]
 
-static void restrictMG(Solver *s, int level, Comm *comm)
+static void restrictMG(Solver *s, int level, CommType *comm)
 {
   double *r     = s->r[level + 1];
   double *old   = s->r[level];
 
-  int imaxLocal = comm->imaxLocal;
-  int jmaxLocal = comm->jmaxLocal;
-  int kmaxLocal = comm->kmaxLocal;
+  int imaxLocal = comm->imaxLocal + 1;
+  int jmaxLocal = comm->jmaxLocal + 1;
+  int kmaxLocal = comm->kmaxLocal + 1;
 
   commExchange(comm, old);
 
-  for (int k = 1; k < comm->kmaxLocal + 1; k++) {
-    for (int j = 1; j < comm->jmaxLocal + 1; j++) {
-      for (int i = 1; i < comm->imaxLocal + 1; ++i) {
+  for (int k = 1; k < imaxLocal / 2; ++k) {
+    for (int j = 1; j < jmaxLocal / 2; ++j) {
+      for (int i = 1; i < kmaxLocal / 2; ++i) {
         R(i, j, k) =
             (OLD(2 * i - 1, 2 * j - 1, 2 * k) + OLD(2 * i, 2 * j - 1, 2 * k) * 2 +
                 OLD(2 * i + 1, 2 * j - 1, 2 * k) + OLD(2 * i - 1, 2 * j, 2 * k) * 2 +
@@ -64,7 +64,7 @@ static void restrictMG(Solver *s, int level, Comm *comm)
   }
 }
 
-static void prolongate(Solver *s, int level, Comm *comm)
+static void prolongate(Solver *s, int level, CommType *comm)
 {
   double *old   = s->r[level + 1];
   double *e     = s->r[level];
@@ -73,16 +73,16 @@ static void prolongate(Solver *s, int level, Comm *comm)
   int jmaxLocal = comm->jmaxLocal;
   int kmaxLocal = comm->kmaxLocal;
 
-  for (int k = 2; k < kmaxLocal + 1; k += 2) {
-    for (int j = 2; j < jmaxLocal + 1; j += 2) {
-      for (int i = 2; i < imaxLocal + 1; i += 2) {
-        E(i, j, k) = OLD(i / 2, j / 2, k / 2);
+  for (int k = 1; k < kmaxLocal + 1; ++k) {
+    for (int j = 1; j < jmaxLocal + 1; ++j) {
+      for (int i = 1; i < imaxLocal + 1; ++i) {
+        E(i, j, k) = OLD((i + 1) / 2, (j + 1) / 2, (k + 1) / 2);
       }
     }
   }
 }
 
-static void correct(Solver *s, double *p, int level, Comm *comm)
+static void correct(Solver *s, double *p, int level, CommType *comm)
 {
   double *e     = s->e[level];
 
@@ -174,7 +174,7 @@ static void setBoundaryCondition(
 #endif
 }
 
-static void smooth(Solver *s, double *p, double *rhs, int level, Comm *comm)
+static void smooth(Solver *s, double *p, const double *rhs, int level, CommType *comm)
 {
   int imaxLocal = comm->imaxLocal;
   int jmaxLocal = comm->jmaxLocal;
@@ -190,7 +190,7 @@ static void smooth(Solver *s, double *p, double *rhs, int level, Comm *comm)
   double idz2   = 1.0 / dz2;
   double factor =
       s->omega * 0.5 * (dx2 * dy2 * dz2) / (dy2 * dz2 + dx2 * dz2 + dx2 * dy2);
-  double *r    = s->r[level];
+
   double epssq = eps * eps;
   int it       = 0;
   int pass, ksw, jsw, isw;
@@ -223,12 +223,17 @@ static void smooth(Solver *s, double *p, double *rhs, int level, Comm *comm)
   }
 }
 
-static double calculateResidual(Solver *s, double *p, double *rhs, int level, Comm *comm)
+static double calculateResidual(
+    Solver *s, double *p, const double *rhs, int level, CommType *comm)
 {
 
   int imaxLocal = comm->imaxLocal;
   int jmaxLocal = comm->jmaxLocal;
   int kmaxLocal = comm->kmaxLocal;
+
+  int imax      = s->grid->imax;
+  int jmax      = s->grid->jmax;
+  int kmax      = s->grid->kmax;
 
   double eps    = s->eps;
   int itermax   = s->itermax;
@@ -272,9 +277,9 @@ static double calculateResidual(Solver *s, double *p, double *rhs, int level, Co
     ksw = 3 - ksw;
   }
 
-  commReduction(&res, SUM);
+  commReduceAll(&res, SUM);
 
-  res = res / (double)(imaxLocal * jmaxLocal * kmaxLocal);
+  res = res / (double)(imax * jmax * kmax);
 #ifdef DEBUG
   if (commIsMaster(s->comm)) {
     printf("%d Residuum: %e\n", it, res);
@@ -283,7 +288,16 @@ static double calculateResidual(Solver *s, double *p, double *rhs, int level, Co
   return res;
 }
 
-static double multiGrid(Solver *s, double *p, double *rhs, int level, Comm *comm)
+static bool checkDimension(int imaxLocal, int jmaxLocal, int kmaxLocal)
+{
+  if (imaxLocal < 2 || jmaxLocal < 2 || kmaxLocal < 2) {
+    return true;
+  }
+  return false;
+}
+
+static double multiGrid(
+    Solver *s, double *p, const double *rhs, int level, CommType *comm)
 {
   int imaxLocal = comm->imaxLocal;
   int jmaxLocal = comm->jmaxLocal;
@@ -292,11 +306,11 @@ static double multiGrid(Solver *s, double *p, double *rhs, int level, Comm *comm
   double res    = 0.0;
 
   // coarsest level
-  if (level == COARSEST_LEVEL) {
-    for (int i = 0; i < 5; i++) {
+  if (level == COARSEST_LEVEL || checkDimension(imaxLocal, jmaxLocal, kmaxLocal)) {
+    for (int i = 0; i < s->presmooth; i++) {
       smooth(s, p, rhs, level, comm);
     }
-    return res;
+    return calculateResidual(s, p, rhs, level, comm);
   }
 
   // pre-smoothing
@@ -313,7 +327,7 @@ static double multiGrid(Solver *s, double *p, double *rhs, int level, Comm *comm
 
   // Create a new comm object withupdated imaxLocal and jmaxLocal
   // along with their updated bufferTypes, sdispls, rdispls
-  Comm newcomm;
+  CommType newcomm;
   commUpdateDatatypes(s->comm, &newcomm, imaxLocal, jmaxLocal, kmaxLocal);
 
   // MGSolver on residual and error.
@@ -374,7 +388,7 @@ void initSolver(Solver *s, Discretization *d, Parameter *p)
   }
 }
 
-double solve(Solver *s, double *p, double *rhs)
+double solve(Solver *s, double *p, const double *rhs)
 {
   double res = multiGrid(s, p, rhs, 0, s->comm);
 
